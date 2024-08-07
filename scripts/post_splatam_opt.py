@@ -378,7 +378,7 @@ def rgbd_slam(config: dict):
     params['gt_w2c_all_frames'] = np.stack(params['gt_w2c_all_frames'], axis=0)
     
     # Save Parameters
-    save_params(params, output_dir)
+    save_params(params, output_dir, 'params_splatam_opt.npz')
 
     # Close WandB Run
     if config['use_wandb']:

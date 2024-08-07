@@ -66,6 +66,7 @@ def get_dataset(config_dict, basedir, sequence, **kwargs):
 
 def get_pointcloud(color, depth, intrinsics, w2c, transform_pts=True, 
                    mask=None, compute_mean_sq_dist=False, mean_sq_dist_method="projective"):
+    # jhuai: w2c is the transformation of the world frame wrt the camera frame.
     width, height = color.shape[2], color.shape[1]
     CX = intrinsics[0][2]
     CY = intrinsics[1][2]
@@ -168,7 +169,7 @@ def initialize_optimizer(params, lrs_dict, tracking):
 
 def initialize_first_timestep(dataset, num_frames, scene_radius_depth_ratio, 
                               mean_sq_dist_method, densify_dataset=None, gaussian_distribution=None):
-    # Get RGB-D Data & Camera Parameters
+    # Get RGB-D Data & Camera Parameters, pose is the camera wrt the world frame
     color, depth, intrinsics, pose = dataset[0]
 
     # Process RGB-D Data
@@ -983,7 +984,7 @@ def rgbd_slam(config: dict):
     params['keyframe_time_indices'] = np.array(keyframe_time_indices)
     
     # Save Parameters
-    save_params(params, output_dir)
+    save_params(params, output_dir, 'params_splatam.npz')
 
     # Close WandB Run
     if config['use_wandb']:

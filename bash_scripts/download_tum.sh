@@ -1,5 +1,6 @@
-mkdir -p data/TUM_RGBD
-cd data/TUM_RGBD
+datadir=/media/pi/My_Book/jhuai/data
+mkdir -p $datadir/TUM_RGBD
+cd $datadir/TUM_RGBD
 wget https://vision.in.tum.de/rgbd/dataset/freiburg1/rgbd_dataset_freiburg1_desk.tgz
 tar -xvzf rgbd_dataset_freiburg1_desk.tgz
 wget https://cvg.cit.tum.de/rgbd/dataset/freiburg1/rgbd_dataset_freiburg1_desk2.tgz

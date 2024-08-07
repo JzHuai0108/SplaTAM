@@ -355,7 +355,7 @@ if __name__ == "__main__":
         results_dir = os.path.join(
             experiment.config["workdir"], experiment.config["run_name"]
         )
-        scene_path = os.path.join(results_dir, "params.npz")
+        scene_path = os.path.join(results_dir, "params_splatam.npz")
     else:
         scene_path = experiment.config["scene_path"]
     viz_cfg = experiment.config["viz"]

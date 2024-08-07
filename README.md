@@ -77,6 +77,7 @@ conda activate splatam
 conda install -c "nvidia/label/cuda-11.6.0" cuda-toolkit
 conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.6 -c pytorch -c conda-forge
 pip install -r requirements.txt
+conda install anaconda::gxx_linux-64 # to resolve the [ninja error for diff-gaussian-rasterization-w-depth](https://github.com/spla-tam/SplaTAM/issues/119)
 ```
 
 <!-- Alternatively, we also provide a conda environment.yml file :

@@ -20,7 +20,9 @@ from tqdm import tqdm
 import wandb
 
 from datasets.gradslam_datasets import (load_dataset_config, ICLDataset, ReplicaDataset, ReplicaV2Dataset, AzureKinectDataset,
-                                        ScannetDataset, Ai2thorDataset, Record3DDataset, RealsenseDataset, TUMDataset,
+                                        ScannetDataset, Ai2thorDataset, Record3DDataset, RealsenseDataset,
+                                        RRXIODataset,
+                                        TUMDataset,
                                         ScannetPPDataset, NeRFCaptureDataset)
 from utils.common_utils import seed_everything, save_params
 from utils.recon_helpers import setup_camera
@@ -61,6 +63,8 @@ def get_dataset(config_dict, basedir, sequence, **kwargs):
         return ScannetPPDataset(basedir, sequence, **kwargs)
     elif config_dict["dataset_name"].lower() in ["nerfcapture"]:
         return NeRFCaptureDataset(basedir, sequence, **kwargs)
+    elif config_dict["dataset_name"].lower() in ["rrxio"]:
+        return RRXIODataset(basedir, sequence, **kwargs)
     else:
         raise ValueError(f"Unknown dataset name {config_dict['dataset_name']}")
 
@@ -584,7 +588,7 @@ def offline_splatting(config: dict):
     params['gt_w2c_all_frames'] = np.stack(params['gt_w2c_all_frames'], axis=0)
     
     # Save Parameters
-    save_params(params, output_dir)
+    save_params(params, output_dir, 'params_gs.npz')
 
     # Close WandB Run
     if config['use_wandb']:

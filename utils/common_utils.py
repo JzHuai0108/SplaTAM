@@ -32,13 +32,13 @@ def params2cpu(params):
     return res
 
 
-def save_params(output_params, output_dir):
+def save_params(output_params, output_dir, param_basename="params.npz"):
     # Convert to CPU Numpy Arrays
     to_save = params2cpu(output_params)
     # Save the Parameters containing the Gaussian Trajectories
     os.makedirs(output_dir, exist_ok=True)
     print(f"Saving parameters to: {output_dir}")
-    save_path = os.path.join(output_dir, "params.npz")
+    save_path = os.path.join(output_dir, param_basename)
     np.savez(save_path, **to_save)
 
 
