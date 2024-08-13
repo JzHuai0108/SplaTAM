@@ -2,7 +2,7 @@ import os
 from os.path import join as p_join
 
 primary_device = "cuda:0"
-mytumdir="/media/pi/BackupPlus/jhuai/data/rrxio/irs_rtvi_datasets_2021"
+datasetdir="/media/pi/BackupPlus/jhuai/data/rrxio/irs_rtvi_datasets_2021"
 scenes = ["mocap_easy", "mocap_medium", "gym"]
 
 seed = int(0)
@@ -46,9 +46,9 @@ config = dict(
         eval_save_qual=True,
     ),
     data=dict(
-        basedir=mytumdir,
-        gradslam_data_cfg=f"./configs/data/rrxio.yaml",
-        sequence=f"rgbd_dataset_{scene_name}",
+        basedir=datasetdir,
+        gradslam_data_cfg=f"./configs/data/rrxio_thermal.yaml",
+        sequence=f"{scene_name}",
         desired_image_height=512,
         desired_image_width=640,
         desired_image_height_init=256,

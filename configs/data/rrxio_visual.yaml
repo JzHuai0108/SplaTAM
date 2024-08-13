@@ -1,0 +1,13 @@
+dataset_name: 'rrxio'
+use_thermal: 0
+camera_params:
+  image_height: 512
+  image_width: 640
+  fx: 372.51
+  fy: 372.51
+  cx: 318.77
+  cy: 253.24
+  crop_edge: 0
+  png_depth_scale: 500.0
+  distortion: [0.013404032824313381, 0.013570186060580948, -0.011005228038287808, 0.0040591597486]
+  distortion_model: 'equidistant'

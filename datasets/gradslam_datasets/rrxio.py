@@ -28,6 +28,10 @@ class RRXIODataset(GradSLAMDataset):
     ):
         self.input_folder = os.path.join(basedir, sequence)
         self.pose_path = None
+        if 'use_thermal' in config_dict:
+            self.use_thermal = config_dict['use_thermal']
+        else:
+            self.use_thermal = True
         super().__init__(
             config_dict,
             stride=stride,
@@ -76,16 +80,19 @@ class RRXIODataset(GradSLAMDataset):
         return pose
 
     def get_filepaths(self):
-
         frame_rate = 32
+        pose_list = None
         """ read video data in tum-rgbd format """
-        if os.path.isfile(os.path.join(self.input_folder, 'groundtruth.txt')):
-            pose_list = os.path.join(self.input_folder, 'groundtruth.txt')
-        elif os.path.isfile(os.path.join(self.input_folder, 'pose.txt')):
-            pose_list = os.path.join(self.input_folder, 'pose.txt')
-
-        image_list = os.path.join(self.input_folder, 'rgb.txt')
-        depth_list = os.path.join(self.input_folder, 'depth.txt')
+        if self.use_thermal:
+            if os.path.isfile(os.path.join(self.input_folder, 'gt_thermal.txt')):
+                pose_list = os.path.join(self.input_folder, 'gt_thermal.txt')
+            image_list = os.path.join(self.input_folder, 'thermal.txt')
+            depth_list = os.path.join(self.input_folder, 'radart.txt')
+        else:
+            if os.path.isfile(os.path.join(self.input_folder, 'gt_visual.txt')):
+                pose_list = os.path.join(self.input_folder, 'gt_visual.txt')
+            image_list = os.path.join(self.input_folder, 'visual.txt')
+            depth_list = os.path.join(self.input_folder, 'radarv.txt')
 
         image_data = self.parse_list(image_list)
         depth_data = self.parse_list(depth_list)
@@ -116,16 +123,19 @@ class RRXIODataset(GradSLAMDataset):
         return color_paths, depth_paths, embedding_paths
     
     def load_poses(self):
-        
         frame_rate = 32
+        pose_list = None
         """ read video data in tum-rgbd format """
-        if os.path.isfile(os.path.join(self.input_folder, 'groundtruth.txt')):
-            pose_list = os.path.join(self.input_folder, 'groundtruth.txt')
-        elif os.path.isfile(os.path.join(self.input_folder, 'pose.txt')):
-            pose_list = os.path.join(self.input_folder, 'pose.txt')
-
-        image_list = os.path.join(self.input_folder, 'rgb.txt')
-        depth_list = os.path.join(self.input_folder, 'depth.txt')
+        if self.use_thermal:
+            if os.path.isfile(os.path.join(self.input_folder, 'gt_thermal.txt')):
+                pose_list = os.path.join(self.input_folder, 'gt_thermal.txt')
+            image_list = os.path.join(self.input_folder, 'thermal.txt')
+            depth_list = os.path.join(self.input_folder, 'radart.txt')
+        else:
+            if os.path.isfile(os.path.join(self.input_folder, 'gt_visual.txt')):
+                pose_list = os.path.join(self.input_folder, 'gt_visual.txt')
+            image_list = os.path.join(self.input_folder, 'visual.txt')
+            depth_list = os.path.join(self.input_folder, 'radarv.txt')
 
         image_data = self.parse_list(image_list)
         depth_data = self.parse_list(depth_list)

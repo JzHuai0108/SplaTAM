@@ -159,6 +159,11 @@ class GradSLAMDataset(torch.utils.data.Dataset):
             if "distortion" in config_dict["camera_params"]
             else None
         )
+        self.distortion_model = (
+            config_dict["camera_params"]["distortion_model"]
+            if "distortion_model" in config_dict["camera_params"]
+            else None
+        )
         self.crop_size = (
             config_dict["camera_params"]["crop_size"] if "crop_size" in config_dict["camera_params"] else None
         )
@@ -296,18 +301,35 @@ class GradSLAMDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         color_path = self.color_paths[index]
         depth_path = self.depth_paths[index]
-        color = np.asarray(imageio.imread(color_path), dtype=float)
+        img = imageio.imread(color_path)
+
+        if len(img.shape) == 2 or img.shape[2] == 1:
+            rgb_img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        else:
+            rgb_img = img
+        # cv2.imshow("distorted", rgb_img)
+        # cv2.waitKey(3000)
+        K = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
+        if self.distortion is not None:
+            if self.distortion_model is None or self.distortion_model == "radtan":
+                # undistortion is only applied on color image, not depth!
+                rgb_img = cv2.undistort(rgb_img, K, self.distortion)
+            elif self.distortion_model == "equidistant":
+                wh = rgb_img.shape[:2][::-1]
+                map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, self.distortion, np.eye(3), K, wh, cv2.CV_16SC2)
+                undistorted_image = cv2.remap(rgb_img, map1, map2, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
+                rgb_img = undistorted_image
+                # cv2.imshow("undistorted", rgb_img)
+                # cv2.waitKey(3000)
+            else:
+                raise ValueError("Unknown distortion model: {0}".format(self.distortion_model))
+        color = np.asarray(rgb_img, dtype=float)
         color = self._preprocess_color(color)
         if ".png" in depth_path:
             # depth_data = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
             depth = np.asarray(imageio.imread(depth_path), dtype=np.int64)
         elif ".exr" in depth_path:
             depth = readEXR_onlydepth(depth_path)
-
-        K = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
-        if self.distortion is not None:
-            # undistortion is only applied on color image, not depth!
-            color = cv2.undistort(color, K, self.distortion)
 
         color = torch.from_numpy(color)
         K = torch.from_numpy(K)

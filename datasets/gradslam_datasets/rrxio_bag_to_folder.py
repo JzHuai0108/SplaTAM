@@ -2,13 +2,14 @@ import os
 
 
 import cv2
+import scipy.spatial.transform
 from cv_bridge import CvBridge
 
 import imageio
 import numpy as np
+import re
 import rosbag
 import sensor_msgs.point_cloud2 as pc2
-
 
 def pointcloud2_msg_to_pcl(msg):
     """
@@ -37,6 +38,7 @@ def pointcloud2_msg_to_pcl(msg):
 def transform_points_to_camera_frame(points, T, intrinsics, scale=500):
     """
     Transforms points from the radar frame to the camera frame and projects them onto the camera image.
+    Note we do not apply camera distortion here.
 
     Args:
     - points (np.ndarray): The pointcloud as a numpy array.
@@ -167,6 +169,61 @@ def rrxio_bag_to_folder(bag_path, output_folder):
     print('Saved {} visual frames, {} thermal frames, {} radarv frames, and {} radart frames to {}'.format(
         len(visual_frames), len(thermal_frames), len(radarv_frames), len(radart_frames), output_folder))
 
+def rrxio_gt_to_folder(csv_path, output_folder):
+    """
+    Convert gt poses of the IMU frame relative to a world frame to the RGB or thermal camera frame
+    and then save them to the output folder.
+
+    Args:
+    - csv_path (str): The path to the csv file containing the ground truth poses.
+    - output_folder (str): The path to the folder where the extracted data will be saved.
+    """
+    imu_T_visual = np.array([[0.028005, -0.003616, 0.999601, 0.040],
+                                [-0.999603, -0.003289, 0.027994, 0.020],
+                                [0.003186, -0.999988, -0.003707, 0.034],
+                                [0., 0., 0., 1.]])
+
+    imu_T_thermal = np.array([[0.03200098, -0.00996519, 0.99943816, 0.03],
+                                [-0.99948614, -0.00215939, 0.03198098, 0.02],
+                                [0.00183948, -0.99994801, -0.01002917, -0.005],
+                                [0., 0., 0., 1.]])
+
+    os.makedirs(output_folder, exist_ok=True)
+    pose_list = []
+    with open(csv_path, 'r') as f:
+        for line in f:
+            if line.startswith('#'):
+                continue
+            parts = re.findall(r'[^,\s]+', line)
+            t = parts[0]
+            ft = float(t)
+            if ft.is_integer():
+                secs = int(parts[0][:-9])
+                nsecs = int(parts[0][-9:])
+                rt = (secs, nsecs)
+            else:
+                secs = int(ft)
+                nsecs = int((ft - secs) * 1e9)
+                rt = (secs, nsecs)
+
+            x, y, z = map(float, parts[1:4])
+            qx, qy, qz, qw = map(float, parts[4:8])
+            pose_list.append((rt, (x, y, z, qx, qy, qz, qw)))
+    extrinsic_list = [imu_T_visual, imu_T_thermal]
+    type_list = ['gt_visual.txt', 'gt_thermal.txt']
+    for extrinsic, fn in zip(extrinsic_list, type_list):
+        with open(os.path.join(output_folder, fn), 'w') as f:
+            f.write('#timestamp x y z qx qy qz qw\n')
+            for rt, pose in pose_list:
+                W_T_B = np.eye(4)
+                W_T_B[:3, :3] = scipy.spatial.transform.Rotation.from_quat(pose[3:]).as_matrix()
+                W_T_B[:3, 3] = pose[:3]
+                W_T_visual = np.matmul(W_T_B, extrinsic)
+                p = W_T_visual[:3, 3]
+                q = scipy.spatial.transform.Rotation.from_matrix(W_T_visual[:3, :3]).as_quat()
+                f.write(f'{rt[0]}.{rt[1]:09d} {p[0]:.6f} {p[1]:.6f} {p[2]:.6f} {q[0]:.10f} {q[1]:.10f} {q[2]:.10f} {q[3]:.10f}\n')
+    print('Saved {} poses to {}'.format(len(pose_list), output_folder))
+
 
 if __name__ == '__main__':
     import argparse
@@ -175,3 +232,5 @@ if __name__ == '__main__':
     parser.add_argument('output_folder', type=str)
     args = parser.parse_args()
     rrxio_bag_to_folder(args.bag_path, args.output_folder)
+    gt_path = args.bag_path.replace('.bag', '_gt.csv')
+    rrxio_gt_to_folder(gt_path, args.output_folder)

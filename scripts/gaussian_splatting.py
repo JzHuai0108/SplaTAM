@@ -64,7 +64,7 @@ def get_dataset(config_dict, basedir, sequence, **kwargs):
     elif config_dict["dataset_name"].lower() in ["nerfcapture"]:
         return NeRFCaptureDataset(basedir, sequence, **kwargs)
     elif config_dict["dataset_name"].lower() in ["rrxio"]:
-        return RRXIODataset(basedir, sequence, **kwargs)
+        return RRXIODataset(config_dict, basedir, sequence, **kwargs)
     else:
         raise ValueError(f"Unknown dataset name {config_dict['dataset_name']}")
 
