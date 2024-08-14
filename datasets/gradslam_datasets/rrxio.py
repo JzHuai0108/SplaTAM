@@ -51,7 +51,7 @@ class RRXIODataset(GradSLAMDataset):
                           dtype=np.unicode_, skiprows=skiprows)
         return data
 
-    def associate_frames(self, tstamp_image, tstamp_depth, tstamp_pose, max_dt=0.08):
+    def associate_frames(self, tstamp_image, tstamp_depth, tstamp_pose, max_dt=0.03):
         """ pair images, depths, and poses """
         associations = []
         for i, t in enumerate(tstamp_image):
@@ -147,6 +147,8 @@ class RRXIODataset(GradSLAMDataset):
         tstamp_pose = pose_data[:, 0].astype(np.float64)
         associations = self.associate_frames(
             tstamp_image, tstamp_depth, tstamp_pose)
+        print('Find {} matches out of {} color images, {} depth images, and {} poses'.format(
+            len(associations), len(tstamp_image), len(tstamp_depth), len(tstamp_pose)))
 
         indicies = [0]
         for i in range(1, len(associations)):

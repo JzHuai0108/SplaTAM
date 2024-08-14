@@ -11,3 +11,5 @@ camera_params:
   png_depth_scale: 500.0 # to keep the fractional part, we converted the radar depth to 16-bit PNG with a scale of 500.
   distortion: [-0.09202092749042277, 0.04012198239889151, -0.03795923559427829, 0.010728597805678742]
   distortion_model: 'equidistant'
+  # K optimal obtained by cv2.fisheye.estimateNewCameraMatrixForUndistortRectify() with balance=0.0
+  K_optimal: [334.19639643, 0.0, 318.48142004, 0.0, 334.26241379, 250.56663663, 0.0, 0.0, 1.0]

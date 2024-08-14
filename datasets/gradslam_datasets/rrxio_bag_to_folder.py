@@ -87,9 +87,12 @@ def rrxio_bag_to_folder(bag_path, output_folder):
 
     visual_intrinsics = [640, 512, 372.51, 372.51, 318.77, 253.24,
                          0.013404032824313381, 0.013570186060580948, -0.011005228038287808, 0.0040591597486]
+    visual_intrinsics_optimal = [640, 512, 315.93052466, 315.93052466, 318.24482797, 252.56753124, 0, 0, 0, 0]
 
     thermal_intrinsics = [640, 512, 404.98, 405.06, 319.05, 251.84,
                           -0.09202092749042277, 0.04012198239889151, -0.03795923559427829, 0.010728597805678742]
+    thermal_intrinsics_optimal = [640, 512, 334.19639643, 334.26241379, 318.48142004, 250.56663663, 0, 0, 0, 0]
+
     # transforms from the radar frame to the thermal camera frame: p_thermal = T_thermal_radar * p_radar
     visual_T_radar = np.array([[9.99978632e-01, 6.66223802e-03, -5.69217613e-03, -1.96677240e-02],
                                  [5.85607039e-04, -2.16606087e-02, 9.99748301e-01, 7.38610120e-02],
@@ -135,14 +138,14 @@ def rrxio_bag_to_folder(bag_path, output_folder):
         elif topic == radar_topic:
             pointcloud = pointcloud2_msg_to_pcl(msg)
             frame_time = msg.header.stamp
-            depthv, outlierv = transform_points_to_camera_frame(pointcloud, visual_T_radar, visual_intrinsics, scale = 500)
+            depthv, outlierv = transform_points_to_camera_frame(pointcloud, visual_T_radar, visual_intrinsics_optimal, scale = 500)
             basenamev = f'radarv/{frame_time.secs}.{frame_time.nsecs:09d}.png'
             radarv_frames.append((frame_time, basenamev))
             # if outlierv > 0.2 * len(pointcloud):
             #     print('radarv {} : {} out of {}'.format(basenamev, outlierv, len(pointcloud)))
             imageio.imwrite(os.path.join(output_folder, basenamev), depthv)
 
-            deptht, outliert = transform_points_to_camera_frame(pointcloud, thermal_T_radar, thermal_intrinsics, scale = 500)
+            deptht, outliert = transform_points_to_camera_frame(pointcloud, thermal_T_radar, thermal_intrinsics_optimal, scale = 500)
             basenamet = f'radart/{frame_time.secs}.{frame_time.nsecs:09d}.png'
             radart_frames.append((frame_time, basenamet))
             # if outliert > 0.2 * len(pointcloud):

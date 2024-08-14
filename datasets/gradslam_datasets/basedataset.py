@@ -132,6 +132,10 @@ class GradSLAMDataset(torch.utils.data.Dataset):
         self.fy = config_dict["camera_params"]["fy"]
         self.cx = config_dict["camera_params"]["cx"]
         self.cy = config_dict["camera_params"]["cy"]
+        if 'K_optimal' in config_dict["camera_params"]:
+            self.K_optimal = np.array(config_dict["camera_params"]["K_optimal"]).reshape(3, 3)
+        else:
+            self.K_optimal = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
 
         self.dtype = dtype
 
@@ -283,14 +287,12 @@ class GradSLAMDataset(torch.utils.data.Dataset):
 
     def get_cam_K(self):
         """
-        Return camera intrinsics matrix K
+        Return camera intrinsics matrix
 
         Returns:
             K (torch.Tensor): Camera intrinsics matrix, of shape (3, 3)
         """
-        K = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
-        K = torch.from_numpy(K)
-        return K
+        return torch.from_numpy(self.K_optimal)
 
     def read_embedding_from_file(self, embedding_path: str):
         """
@@ -309,20 +311,19 @@ class GradSLAMDataset(torch.utils.data.Dataset):
             rgb_img = img
         # cv2.imshow("distorted", rgb_img)
         # cv2.waitKey(3000)
-        K = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
+        K_original = as_intrinsics_matrix([self.fx, self.fy, self.cx, self.cy])
         if self.distortion is not None:
             if self.distortion_model is None or self.distortion_model == "radtan":
                 # undistortion is only applied on color image, not depth!
-                rgb_img = cv2.undistort(rgb_img, K, self.distortion)
+                rgb_img = cv2.undistort(rgb_img, K_original, distortion, None, self.K_optimal)
             elif self.distortion_model == "equidistant":
                 wh = rgb_img.shape[:2][::-1]
-                map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, self.distortion, np.eye(3), K, wh, cv2.CV_16SC2)
-                undistorted_image = cv2.remap(rgb_img, map1, map2, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
-                rgb_img = undistorted_image
-                # cv2.imshow("undistorted", rgb_img)
-                # cv2.waitKey(3000)
+                map1, map2 = cv2.fisheye.initUndistortRectifyMap(K_original, self.distortion, np.eye(3), self.K_optimal, wh, cv2.CV_16SC2)
+                rgb_img = cv2.remap(rgb_img, map1, map2, cv2.INTER_LINEAR, cv2.BORDER_CONSTANT)
             else:
                 raise ValueError("Unknown distortion model: {0}".format(self.distortion_model))
+        # cv2.imshow("undistorted", rgb_img)
+        # cv2.waitKey(3000)
         color = np.asarray(rgb_img, dtype=float)
         color = self._preprocess_color(color)
         if ".png" in depth_path:
@@ -332,14 +333,14 @@ class GradSLAMDataset(torch.utils.data.Dataset):
             depth = readEXR_onlydepth(depth_path)
 
         color = torch.from_numpy(color)
-        K = torch.from_numpy(K)
+        K_optimal = torch.from_numpy(self.K_optimal)
 
         depth = self._preprocess_depth(depth)
         depth = torch.from_numpy(depth)
 
-        K = datautils.scale_intrinsics(K, self.height_downsample_ratio, self.width_downsample_ratio)
-        intrinsics = torch.eye(4).to(K)
-        intrinsics[:3, :3] = K
+        K_optimal = datautils.scale_intrinsics(K_optimal, self.height_downsample_ratio, self.width_downsample_ratio)
+        intrinsics = torch.eye(4).to(K_optimal)
+        intrinsics[:3, :3] = K_optimal
 
         pose = self.transformed_poses[index]
 

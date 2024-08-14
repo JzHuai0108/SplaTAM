@@ -11,3 +11,5 @@ camera_params:
   png_depth_scale: 500.0
   distortion: [0.013404032824313381, 0.013570186060580948, -0.011005228038287808, 0.0040591597486]
   distortion_model: 'equidistant'
+  # K optimal obtained by cv2.fisheye.estimateNewCameraMatrixForUndistortRectify() with balance=0.0
+  K_optimal: [315.93052466, 0.0, 318.24482797, 0.0, 315.93052466, 252.56753124, 0.0, 0.0, 1.0]
